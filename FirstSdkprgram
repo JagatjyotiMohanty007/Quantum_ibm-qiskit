@@ -1,0 +1,140 @@
+"""
+First Quantum Program using IBM Qiskit
+This program creates a simple quantum circuit and executes it on a simulator.
+"""
+
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit_aer import AerSimulator
+from qiskit.primitives import Sampler
+
+def create_bell_state():
+    """Create a Bell state (entangled state) quantum circuit"""
+    # Create quantum registers (qubits) and classical registers (bits for measurement)
+    qr = QuantumRegister(2, 'q')
+    cr = ClassicalRegister(2, 'c')
+    
+    # Create a quantum circuit
+    circuit = QuantumCircuit(qr, cr)
+    
+    # Apply Hadamard gate to first qubit
+    circuit.h(qr[0])
+    
+    # Apply CNOT (controlled-NOT) gate to create entanglement
+    circuit.cx(qr[0], qr[1])
+    
+    # Measure both qubits
+    circuit.measure(qr, cr)
+    
+    return circuit
+
+def create_grover_circuit():
+    """Create a simple Grover's algorithm circuit"""
+    qc = QuantumCircuit(2)
+    
+    # Initialize superposition
+    qc.h([0, 1])
+    
+    # Oracle: mark the state |11>
+    qc.cz(0, 1)
+    
+    # Diffusion operator
+    qc.h([0, 1])
+    qc.x([0, 1])
+    qc.cz(0, 1)
+    qc.x([0, 1])
+    qc.h([0, 1])
+    
+    return qc
+
+def create_deutsch_jozsa_circuit():
+    """Create a simple Deutsch-Jozsa algorithm circuit"""
+    qc = QuantumCircuit(2, 1)
+    
+    # Initialize input qubit in |1> state
+    qc.x(1)
+    
+    # Apply Hadamard to both qubits
+    qc.h([0, 1])
+    
+    # Apply identity (constant function) - for balanced function use cx(0, 1)
+    qc.id(0)
+    
+    # Apply Hadamard to first qubit
+    qc.h(0)
+    
+    # Measure
+    qc.measure(0, 0)
+    
+    return qc
+
+def run_circuit_on_simulator(circuit, shots=1000):
+    """Run the circuit on the Aer simulator"""
+    # Create simulator
+    simulator = AerSimulator()
+    
+    # Transpile circuit for the simulator
+    from qiskit.transpile import transpile
+    transpiled_circuit = transpile(circuit, simulator)
+    
+    # Run the circuit
+    job = simulator.run(transpiled_circuit, shots=shots)
+    result = job.result()
+    
+    return result
+
+def display_results(result, title=""):
+    """Display the measurement results"""
+    counts = result.get_counts()
+    
+    print(f"\n{'='*50}")
+    print(f"Results: {title}")
+    print(f"{'='*50}")
+    
+    for bitstring, count in sorted(counts.items(), key=lambda x: x[1], reverse=True):
+        percentage = (count / sum(counts.values())) * 100
+        print(f"State {bitstring}: {count:4d} times ({percentage:5.1f}%)")
+
+def plot_histogram(result):
+    """Plot a histogram of results (requires matplotlib)"""
+    try:
+        from qiskit.visualization import plot_histogram
+        counts = result.get_counts()
+        plot_histogram(counts)
+    except ImportError:
+        print("Matplotlib not installed. Skipping histogram plot.")
+
+def main():
+    print("🔬 Welcome to IBM Qiskit - First Quantum Program!")
+    print("="*50)
+    
+    # Example 1: Bell State (Entanglement)
+    print("\n1️⃣  Creating a Bell State (Entangled Qubits)")
+    bell_circuit = create_bell_state()
+    print("\nBell State Circuit:")
+    print(bell_circuit)
+    
+    result_bell = run_circuit_on_simulator(bell_circuit, shots=1000)
+    display_results(result_bell, "Bell State")
+    
+    # Example 2: Grover's Algorithm
+    print("\n2️⃣  Running Grover's Algorithm")
+    grover_circuit = create_grover_circuit()
+    print("\nGrover's Circuit:")
+    print(grover_circuit)
+    
+    result_grover = run_circuit_on_simulator(grover_circuit, shots=1000)
+    display_results(result_grover, "Grover's Algorithm")
+    
+    # Example 3: Deutsch-Jozsa Algorithm
+    print("\n3️⃣  Running Deutsch-Jozsa Algorithm")
+    dj_circuit = create_deutsch_jozsa_circuit()
+    print("\nDeutsch-Jozsa Circuit:")
+    print(dj_circuit)
+    
+    result_dj = run_circuit_on_simulator(dj_circuit, shots=1000)
+    display_results(result_dj, "Deutsch-Jozsa Algorithm")
+    
+    print("\n✅ All quantum programs executed successfully!")
+
+if __name__ == "__main__":
+    main()
